@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Włoskie Delikatesy</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#008C45">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --italy-green: #008C45; --italy-white: #F4F5F0; --italy-red: #CD212A; --shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--italy-white); padding-bottom: 80px; }
+        .app-header { background: linear-gradient(to right, #008C45 33%, #fff 33%, #fff 66%, #CD212A 66%); padding: 1.2rem; text-align: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 1000; }
+        .app-header h1 { background: white; display: inline-block; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 1.2rem; color: var(--italy-green); border: 1px solid #ddd; }
+        .tab-content { display: none; padding: 1rem; max-width: 600px; margin: auto; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { background: white; padding: 1.2rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 1rem; }
+        .section-title { font-size: 1.1rem; color: var(--italy-green); margin-bottom: 1rem; border-left: 4px solid var(--italy-red); padding-left: 10px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; }
+        .product-row { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; position: relative; border: 1px solid #eee; }
+        .btn { padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: var(--italy-green); color: white; width: 100%; }
+        .btn-add { background: var(--italy-green); color: white; border-radius: 50%; width: 50px; height: 50px; margin: 10px auto; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; height: 70px; border-top: 1px solid #eee; z-index: 2000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #888; font-size: 0.7rem; font-weight: bold; }
+        .nav-item.active { color: var(--italy-green); }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
+        .hist-prod-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #eee; font-size: 0.9rem; }
+        .bought-row { background: #f0fdf4; color: #aaa; text-decoration: line-through; }
+    </style>
+</head>
+<body>
+
+<header class="app-header"><h1><i class="fas fa-pizza-slice"></i> Włoskie Delikatesy</h1></header>
+
+<main>
+    <section id="tab-new" class="tab-content active">
+        <div class="card">
+            <h2 class="section-title" id="form-title">Nowe zamówienie</h2>
+            <input type="hidden" id="edit-id">
+            <input type="text" id="client-name" placeholder="Klient / Restauracja">
+            
