@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Włoskie Delikatesy</title>
+    <meta name="theme-color" content="#008C45">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --italy-green: #008C45; --italy-white: #F4F5F0; --italy-red: #CD212A; --shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--italy-white); padding-bottom: 80px; }
+        .app-header { background: linear-gradient(to right, #008C45 33%, #fff 33%, #fff 66%, #CD212A 66%); padding: 1.2rem; text-align: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 1000; }
+        .app-header h1 { background: white; display: inline-block; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 1.2rem; color: var(--italy-green); border: 1px solid #ddd; }
+        .tab-content { display: none; padding: 1rem; max-width: 600px; margin: auto; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { background: white; padding: 1.2rem; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 1rem; }
+        .section-title { font-size: 1.1rem; color: var(--italy-green); margin-bottom: 1rem; border-left: 4px solid var(--italy-red); padding-left: 10px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; }
+        .product-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; position: relative; }
+        .btn { padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: var(--italy-green); color: white; width: 100%; }
+        .btn-add { background: var(--italy-green); color: white; border-radius: 50%; width: 50px; height: 50px; margin: 10px auto; font-size: 24px; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; height: 70px; border-top: 1px solid #eee; z-index: 2000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: #888; font-size: 0.7rem; font-weight: bold; }
+        .nav-item.active { color: var(--italy-green); }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
+        .shop-table { width: 100%; border-collapse: collapse; }
+        .shop-table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .bought-row { background: #f0fdf4; color: #aaa; text-decoration: line-through; }
+    </style>
+</head>
+<body>
+
+<header class="app-header"><h1><i class="fas fa-pizza-slice"></i> Włoskie Delikatesy</h1></header>
+
+<main>
+    <section id="tab-new" class="tab-content active">
+        <div class="card">
+            <h2 class="section-title" id="form-title">Nowe zamówienie</h2>
+            <input type="hidden" id="edit-id">
+            <label>Klient / Restauracja</label>
+            <input type="text" id="client-name" placeholder="Wpisz nazwę">
+            <div id="products-list"></div>
+            <button class="btn btn-add" onclick="addProductRow()"><i class="fas fa-plus"></i></button>
+            <button class="btn btn-primary" onclick="saveOrder()"><i class="fas fa-save"></i> ZAPISZ</button>
+            <button id="btn-cancel" class="btn" style="display:none; width:100%; margin-top:10px; color:#999;" onclick="resetForm()">Anuluj edycję</button>
+        </div>
+    </section>
+
+    <section id="tab-history" class="tab-content">
+        <h2 class="section-title">Historia</h2>
+        <div id="history-container"></div>
+    </section>
+
+    <section id="tab-shopping" class="tab-content">
+        <div class="card"><h2 class="section-title">Lista zakupów</h2><div id="shopping-container"></div></div>
+    </section>
+</main>
+
+<nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('tab-new', this)"><i class="fas fa-plus-circle"></i>NOWE</button>
+    <button class="nav-item" onclick="switchTab('tab-history', this)"><i class="fas fa-receipt"></i>HISTORIA</button>
+    <button class="nav-item" onclick="switchTab('tab-shopping', this)"><i class="fas fa-shopping-cart"></i>ZAKUPY</button>
+</nav>
+
+<script>
+    // Klucz 'italy_orders' przywraca Twoje stare dane
+    let orders = JSON.parse(localStorage.getItem('italy_orders')) || [];
+
+    function switchTab(id, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
+        if(id === 'tab-history') renderHistory();
+        if(id === 'tab-shopping') renderShopping();
+    }
+
+    function addProductRow(name='', qty='', unit='szt', price='') {
+        const div = document.createElement('div');
+        div.className = 'product-row';
+        div.innerHTML = `
+            <input type="text" placeholder="Produkt" class="p-name" value="${name}" style="grid-column: 1/4">
+            <input type="number" placeholder="Ile" class="p-qty" value="${qty}">
+            <select class="p-unit">
+                <option value="szt" ${unit==='szt'?'selected':''}>szt</option>
+                <option value="krt" ${unit==='krt'?'selected':''}>krt(6)</option>
+            </select>
+            <input type="number" step="0.01" placeholder="Cena" class="p-price" value="${price}">
+            <button style="position:absolute; right:-5px; top:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px;" onclick="this.parentElement.remove()">×</button>
+        `;
+        document.getElementById('products-list').appendChild(div);
+    }
+
+    function saveOrder() {
+        const client = document.getElementById('client-name').value;
+        const editId = document.getElementById('edit-id').value;
+        const rows = document.querySelectorAll('.product-row');
+        let prods = [];
+        rows.forEach(r => {
+            const n = r.querySelector('.p-name').value;
+            const q = r.querySelector('.p-qty').value;
+            const u = r.querySelector('.p-unit').value;
+            const p = r.querySelector('.p-price').value;
+            if(n && q) prods.push({ name: n.trim(), qty: parseFloat(q), unit: u, price: parseFloat(p)||0 });
+        });
+        if(!client || prods.length === 0) return alert("Wypełnij dane!");
+        if(editId) {
+            const i = orders.findIndex(o => o.id == editId);
+            orders[i] = { ...orders[i], client, products: prods };
+        } else {
+            orders.push({ id: Date.now(), client, products: prods, date: new Date().toLocaleDateString('pl-PL') });
+        }
+        localStorage.setItem('italy_orders', JSON.stringify(orders));
+        resetForm();
+        alert("Zapisano!");
+    }
+
+    function resetForm() {
+        document.getElementById('edit-id').value = '';
+        document.getElementById('client-name').value = '';
+        document.getElementById('products-list').innerHTML = '';
+        document.getElementById('form-title').innerText = "Nowe zamówienie";
+        document.getElementById('btn-cancel').style.display = 'none';
+        addProductRow();
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('history-container');
+        container.innerHTML = orders.length ? '' : '<p style="text-align:center; padding:20px;">Brak zamówień</p>';
+        orders.slice().reverse().forEach(o => {
+            let sum = o.products.reduce((acc, p) => acc + (p.qty * p.price), 0);
+            container.innerHTML += `
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>${o.client}</strong>
+                        <span style="color:red; font-weight:bold;">${sum.toFixed(2)} zł</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:#666; margin:8px 0;">${o.date}</div>
+                    <div style="font-size:0.9rem; margin-bottom:10px;">${o.products.map(p => `${p.name} (${p.qty}${p.unit})`).join(', ')}</div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn" style="flex:1; padding:8px; font-size:0.8rem; background:#eee;" onclick="editOrder(${o.id})">Edytuj</button>
+                        <button class="btn" style="padding:8px; background:#fff1f1; color:red;" onclick="deleteOrder(${o.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function editOrder(id) {
+        const o = orders.find(x => x.id == id);
+        switchTab('tab-new', document.querySelector('.nav-item'));
+        document.getElementById('edit-id').value = o.id;
+        document.getElementById('client-name').value = o.client;
+        document.getElementById('products-list').innerHTML = '';
+        o.products.forEach(p => addProductRow(p.name, p.qty, p.unit, p.price));
+        document.getElementById('form-title').innerText = "Edycja";
+        document.getElementById('btn-cancel').style.display = 'block';
+    }
+
+    function deleteOrder(id) { if(confirm("Usunąć?")) { orders = orders.filter(o => o.id !== id); localStorage.setItem('italy_orders', JSON.stringify(orders)); renderHistory(); } }
+
+    function renderShopping() {
+        const container = document.getElementById('shopping-container');
+        const summary = {};
+        orders.forEach(o => o.products.forEach(p => {
+            const realQty = p.unit === 'krt' ? p.qty * 6 : p.qty;
+            summary[p.name] = (summary[p.name] || 0) + realQty;
+        }));
+        let h = '<table class="shop-table">';
+        for (let it in summary) {
+            h += `<tr onclick="this.classList.toggle('bought-row')">
+                <td style="width:30px;"><input type="checkbox"></td>
+                <td>${it}</td>
+                <td style="text-align:right"><b>${summary[it]} szt.</b></td>
+            </tr>`;
+        }
+        container.innerHTML = Object.keys(summary).length ? h + '</table>' : 'Lista pusta';
+    }
+
+    addProductRow();
+</script>
+</body>
+</html>
